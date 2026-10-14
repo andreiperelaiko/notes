@@ -1,76 +1,37 @@
-# Notes Service
+# Notes
 
-Сервис заметок: блокноты и заметки с поиском, закреплением и CRUD через REST API.
-Подробное описание и соответствие 12 факторам — в [Отчёт.md](Отчёт.md).
+Простой сервис заметок: создать, посмотреть, изменить, удалить заметку.
+Описание и соответствие 12 факторам — в [Отчёт.md](Отчёт.md).
 
-## Быстрый старт (Docker)
-
-```bash
-cp .env.example .env        # при необходимости поменять пароль/порт
-docker compose up --build -d
-```
-
-Откройте http://localhost:8080. Swagger UI API доступен на бэкенде по `/docs`; через nginx проксируется только `/api/*`.
-
-Порядок старта: `db` → `migrate` (разовый процесс, применяет миграции и завершается) → `backend` → `frontend`.
-
-Полезные команды:
+## Запуск
 
 ```bash
-docker compose logs -f backend                 # поток логов (JSON в stdout)
-docker compose run --rm migrate                # повторно прогнать миграции
-docker compose up -d --scale backend=3         # несколько экземпляров бэкенда
-docker compose down                            # остановить (данные остаются в volume pgdata)
+cp .env.example .env
+docker compose up --build
 ```
 
-## Запуск без Docker (локальная разработка)
+Откройте http://localhost:8080.
 
-Нужны Python 3.9+ и доступный PostgreSQL.
+## Структура
 
-```bash
-cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-export DATABASE_URL=postgresql://notes:notes@localhost:5432/notes
-.venv/bin/python -m app.migrate
-.venv/bin/python -m app            # слушает $PORT (по умолчанию 8000)
+```
+backend/
+  main.py          весь бэкенд: REST API на FastAPI
+  schema.sql       схема БД
+  migrate.py       разовый процесс, создаёт схему
+frontend/
+  public/index.html               страница со встроенным JS
+  nginx/default.conf.template     nginx: статика + прокси /api на бэкенд
+docker-compose.yml                db → migrate → backend → frontend
 ```
 
-Фронтенд — статика в `frontend/public`, ходит в API по относительному пути `/api`,
-поэтому его нужно отдавать через прокси (nginx из `frontend/`) на том же origin.
-Для отдачи с другого origin задайте бэкенду `CORS_ORIGINS`.
+## API
 
-## Переменные окружения бэкенда
-
-| Переменная | Обязательна | По умолчанию | Назначение |
-|---|---|---|---|
-| `DATABASE_URL` | да | — | строка подключения к PostgreSQL |
-| `PORT` | нет | `8000` | порт HTTP-сервера |
-| `HOST` | нет | `0.0.0.0` | адрес для bind |
-| `LOG_LEVEL` | нет | `INFO` | уровень логирования |
-| `DB_POOL_MIN_SIZE` / `DB_POOL_MAX_SIZE` | нет | `1` / `10` | размер пула соединений |
-| `CORS_ORIGINS` | нет | пусто | разрешённые origin через запятую |
-
-Фронтенд (nginx): `NGINX_PORT` (по умолчанию `80`), `BACKEND_URL` (по умолчанию `http://backend:8000`).
-
-## REST API
-
-| Метод | Путь | Описание |
+| Метод | Путь | Что делает |
 |---|---|---|
-| GET | `/api/health` | проверка живости + доступности БД |
-| GET | `/api/notebooks` | список блокнотов с количеством заметок |
-| POST | `/api/notebooks` | создать блокнот `{"name": "..."}` |
-| GET | `/api/notebooks/{id}` | получить блокнот |
-| PUT | `/api/notebooks/{id}` | переименовать блокнот |
-| DELETE | `/api/notebooks/{id}` | удалить блокнот (заметки остаются без блокнота) |
-| GET | `/api/notes?notebook_id=&without_notebook=&q=&limit=&offset=` | список/поиск заметок |
-| POST | `/api/notes` | создать заметку `{"title", "content", "notebook_id", "pinned"}` |
-| GET | `/api/notes/{id}` | получить заметку |
-| PATCH | `/api/notes/{id}` | частично обновить заметку |
-| DELETE | `/api/notes/{id}` | удалить заметку |
-
-Пример:
-
-```bash
-curl -X POST localhost:8080/api/notes -H 'Content-Type: application/json' \
-     -d '{"title": "Первая заметка", "content": "Привет"}'
-```
+| GET | `/api/notes` | список заметок |
+| GET | `/api/notes/{id}` | одна заметка |
+| POST | `/api/notes` | создать: `{"title": "...", "content": "..."}` |
+| PUT | `/api/notes/{id}` | изменить: `{"title": "...", "content": "..."}` |
+| DELETE | `/api/notes/{id}` | удалить |
+| GET | `/api/health` | проверка, что бэкенд и БД живы |

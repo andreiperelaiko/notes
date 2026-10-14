@@ -1,57 +1,45 @@
-name: notes-service
-
-x-backend-env: &backend-env
-  DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-  LOG_LEVEL: ${LOG_LEVEL:-INFO}
-  PORT: 8000
-
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
-      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
-      timeout: 3s
       retries: 10
 
-  # Разовый административный процесс: миграции схемы (тот же образ, та же конфигурация).
+  # Разовый процесс: создаёт таблицы и завершается.
   migrate:
     build: ./backend
-    image: notes-backend:${APP_VERSION:-latest}
-    command: ["python", "-m", "app.migrate"]
-    environment: *backend-env
+    command: python migrate.py
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
     depends_on:
       db:
         condition: service_healthy
-    restart: "no"
 
   backend:
     build: ./backend
-    image: notes-backend:${APP_VERSION:-latest}
-    environment: *backend-env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: 8000
     depends_on:
       migrate:
         condition: service_completed_successfully
-    restart: unless-stopped
 
   frontend:
     build: ./frontend
-    image: notes-frontend:${APP_VERSION:-latest}
     environment:
       NGINX_PORT: 80
       BACKEND_URL: http://backend:8000
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT}:80"
     depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
+      - backend
 
 volumes:
   pgdata:
