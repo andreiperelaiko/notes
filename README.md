@@ -20,7 +20,7 @@ backend/
   schema.sql       схема БД
   migrate.py       разовый процесс, создаёт схему
 frontend/
-  public/index.html               страница со встроенным JS
+  public/index.html, style.css, app.js   страница, стили, логика
   nginx/default.conf.template     nginx: статика + прокси /api на бэкенд
 docker-compose.yml                db → migrate → backend → frontend
 ```

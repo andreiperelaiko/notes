@@ -2,95 +2,30 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Заметки</title>
-  <style>
-    body { font-family: sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; }
-    input, textarea { width: 100%; box-sizing: border-box; margin-bottom: 8px; font: inherit; padding: 6px; }
-    textarea { height: 100px; }
-    .note { border: 1px solid #ccc; border-radius: 6px; padding: 10px; margin-top: 10px; }
-    .note h3 { margin: 0 0 6px; }
-    .note p { white-space: pre-wrap; margin: 0 0 8px; }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Заметки</h1>
+  <header>
+    <h1>📝 Заметки <span id="count" class="count"></span></h1>
+    <input id="search" type="search" placeholder="Поиск…">
+  </header>
 
-  <form id="form">
-    <input id="title" placeholder="Заголовок" required maxlength="200">
-    <textarea id="content" placeholder="Текст"></textarea>
-    <button type="submit" id="submit">Добавить</button>
-    <button type="button" id="cancel" hidden>Отмена</button>
+  <form id="form" class="editor">
+    <input id="title" placeholder="Заголовок" required maxlength="200" autocomplete="off">
+    <textarea id="content" placeholder="Текст заметки…" rows="4"></textarea>
+    <div class="editor-actions">
+      <span class="hint">Ctrl/⌘ + Enter — сохранить</span>
+      <button type="button" id="cancel" class="btn ghost" hidden>Отмена</button>
+      <button type="submit" id="submit" class="btn primary">Добавить</button>
+    </div>
   </form>
 
-  <div id="notes"></div>
+  <main id="notes" class="grid"></main>
+  <p id="empty" class="empty" hidden>Пока пусто — напишите первую заметку ✨</p>
 
-  <script>
-    const form = document.getElementById("form");
-    const title = document.getElementById("title");
-    const content = document.getElementById("content");
-    const submit = document.getElementById("submit");
-    const cancel = document.getElementById("cancel");
-    let editingId = null; // id заметки, которую редактируем, или null — создаём новую
-
-    async function request(method, url, body) {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      if (!res.ok) alert("Ошибка: " + res.status);
-      return res.status === 204 ? null : res.json();
-    }
-
-    async function load() {
-      const notes = await request("GET", "/api/notes");
-      const list = document.getElementById("notes");
-      list.innerHTML = "";
-      for (const note of notes) {
-        const div = document.createElement("div");
-        div.className = "note";
-        div.innerHTML = "<h3></h3><p></p><button>Изменить</button> <button>Удалить</button>";
-        div.querySelector("h3").textContent = note.title; // textContent — защита от XSS
-        div.querySelector("p").textContent = note.content;
-        const [editBtn, deleteBtn] = div.querySelectorAll("button");
-        editBtn.onclick = () => startEdit(note);
-        deleteBtn.onclick = async () => {
-          if (confirm("Удалить заметку?")) {
-            await request("DELETE", "/api/notes/" + note.id);
-            load();
-          }
-        };
-        list.append(div);
-      }
-    }
-
-    function startEdit(note) {
-      editingId = note.id;
-      title.value = note.title;
-      content.value = note.content;
-      submit.textContent = "Сохранить";
-      cancel.hidden = false;
-      title.focus();
-    }
-
-    function resetForm() {
-      editingId = null;
-      form.reset();
-      submit.textContent = "Добавить";
-      cancel.hidden = true;
-    }
-
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const note = { title: title.value, content: content.value };
-      if (editingId) await request("PUT", "/api/notes/" + editingId, note);
-      else await request("POST", "/api/notes", note);
-      resetForm();
-      load();
-    };
-    cancel.onclick = resetForm;
-
-    load();
-  </script>
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
 </body>
 </html>
