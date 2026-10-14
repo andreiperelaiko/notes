@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Заметки</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <h1>Заметки</h1>
+    <nav>
+      <ul id="notebooks"></ul>
+    </nav>
+    <form id="notebook-form" class="inline-form">
+      <input id="notebook-name" placeholder="Новый блокнот" maxlength="100" required>
+      <button type="submit" title="Создать блокнот">+</button>
+    </form>
+  </aside>
+
+  <section class="list">
+    <div class="list-toolbar">
+      <input id="search" type="search" placeholder="Поиск…">
+      <button id="new-note" class="primary">Новая заметка</button>
+    </div>
+    <ul id="notes"></ul>
+  </section>
+
+  <main class="editor">
+    <div id="empty" class="empty">Выберите заметку или создайте новую</div>
+    <form id="note-form" hidden>
+      <input id="note-title" placeholder="Заголовок" maxlength="200" required>
+      <div class="meta">
+        <select id="note-notebook"></select>
+        <label><input id="note-pinned" type="checkbox"> Закрепить</label>
+        <span id="note-updated" class="muted"></span>
+      </div>
+      <textarea id="note-content" placeholder="Текст заметки"></textarea>
+      <div class="actions">
+        <button type="submit" class="primary">Сохранить</button>
+        <button type="button" id="delete-note" class="danger">Удалить</button>
+      </div>
+    </form>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
