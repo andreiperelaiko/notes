@@ -3,29 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2443c4">
   <title>Заметки</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>📝 Заметки <span id="count" class="count"></span></h1>
-    <input id="search" type="search" placeholder="Поиск…">
+  <!-- Иконки: один набор SVG с одинаковой толщиной линии -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M10 4h4M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12M10 11v6M14 11v6"/></symbol>
+  </svg>
+
+  <header class="band">
+    <div class="band-inner">
+      <div class="band-top">
+        <h1>Заметки</h1>
+        <span id="count" class="count" aria-live="polite"></span>
+        <label class="search">
+          <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+          <span class="sr-only">Поиск по заметкам</span>
+          <input id="search" type="search" placeholder="Поиск" autocomplete="off">
+          <kbd aria-hidden="true">/</kbd>
+        </label>
+      </div>
+
+      <form id="composer" class="sheet composer" novalidate>
+        <label for="new-title" class="sr-only">Заголовок новой заметки</label>
+        <input id="new-title" class="field-title" placeholder="Новая заметка…" maxlength="200" autocomplete="off">
+        <div class="composer-more">
+          <label for="new-content" class="sr-only">Текст новой заметки</label>
+          <textarea id="new-content" class="field-content" placeholder="Текст" rows="3"></textarea>
+          <p class="field-error" role="alert" hidden></p>
+          <div class="actions">
+            <span class="hint">⌘/Ctrl + Enter — добавить</span>
+            <button type="submit" class="btn btn-primary">Добавить</button>
+          </div>
+        </div>
+      </form>
+    </div>
   </header>
 
-  <form id="form" class="editor">
-    <input id="title" placeholder="Заголовок" required maxlength="200" autocomplete="off">
-    <textarea id="content" placeholder="Текст заметки…" rows="4"></textarea>
-    <div class="editor-actions">
-      <span class="hint">Ctrl/⌘ + Enter — сохранить</span>
-      <button type="button" id="cancel" class="btn ghost" hidden>Отмена</button>
-      <button type="submit" id="submit" class="btn primary">Добавить</button>
+  <main class="page">
+    <div id="banner" class="banner" role="alert" hidden>
+      <span id="banner-text"></span>
+      <button type="button" id="retry" class="btn btn-ghost">Повторить</button>
     </div>
-  </form>
+    <ul id="notes" class="index" aria-label="Заметки"></ul>
+    <div id="empty" class="empty" hidden>
+      <p id="empty-text"></p>
+      <button type="button" id="clear-search" class="btn btn-ghost" hidden>Сбросить поиск</button>
+    </div>
+  </main>
 
-  <main id="notes" class="grid"></main>
-  <p id="empty" class="empty" hidden>Пока пусто — напишите первую заметку ✨</p>
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <span id="toast-text"></span>
+    <button type="button" id="toast-action" class="toast-action" hidden></button>
+  </div>
 
-  <div id="toast" class="toast"></div>
   <script src="app.js"></script>
 </body>
 </html>
