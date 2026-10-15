@@ -1,0 +1,59 @@
+# Бэкенд (FastAPI): Deployment — stateless-реплики, которые можно масштабировать.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: notes
+  labels: { app: backend }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      initContainers:
+        - name: wait-for-schema                   # ждём, пока Job migrate создаст таблицу
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until psql \"$DATABASE_URL\" -c 'SELECT 1 FROM notes LIMIT 1' >/dev/null 2>&1; do echo waiting for schema; sleep 2; done"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: notes-secret, key: DATABASE_URL }
+      containers:
+        - name: backend
+          image: notes-backend:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef: { name: notes-config, key: PORT }
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: notes-secret, key: DATABASE_URL }
+          readinessProbe:                         # трафик идёт только на готовые реплики
+            httpGet: { path: /api/health, port: 8000 }
+            periodSeconds: 5
+          livenessProbe:                          # завис процесс — Kubernetes перезапустит контейнер
+            tcpSocket: { port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+---
+# ClusterIP Service: одно стабильное имя backend:8000 для всех реплик,
+# kube-proxy распределяет запросы между ними.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: notes
+spec:
+  selector: { app: backend }
+  ports:
+    - port: 8000
+      targetPort: 8000

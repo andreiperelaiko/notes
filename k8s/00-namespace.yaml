@@ -1,0 +1,6 @@
+# Отдельное пространство имён: все ресурсы приложения лежат в нём,
+# удалить всё разом можно командой kubectl delete namespace notes.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: notes

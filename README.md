@@ -12,6 +12,19 @@ docker compose up --build
 
 Откройте http://localhost:8080.
 
+## Запуск в Kubernetes (minikube)
+
+Манифесты лежат в [k8s/](k8s/), отчёт — [k8s/Отчёт.md](k8s/Отчёт.md), сценарий демонстрации — [k8s/DEMO.md](k8s/DEMO.md).
+
+```bash
+minikube start --driver=docker --container-runtime=docker
+eval $(minikube docker-env)
+docker build -t notes-backend:1.0.0 ./backend
+docker build -t notes-frontend:1.0.0 ./frontend
+kubectl apply -f k8s/
+minikube service frontend -n notes --url
+```
+
 ## Структура
 
 ```
